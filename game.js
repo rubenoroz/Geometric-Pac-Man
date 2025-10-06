@@ -90,29 +90,6 @@ function updatePlayer() { if (!gameStarted) return; const TILE_CENTER=tileSize/2
 function updateEnemies() {
     enemies.forEach(enemy => {
         if (!gameStarted) return;
-        const TILE_CENTER = tileSize / 2;
-        if (enemy.x % tileSize === TILE_CENTER && enemy.y % tileSize === TILE_CENTER) {
-            const ecol = Math.floor(enemy.x / tileSize);
-            const erow = Math.floor(enemy.y / tileSize);
-            const validMoves = [];
-            if (!isWall(ecol, erow - 1)) validMoves.push('up');
-            if (!isWall(ecol, erow + 1)) validMoves.push('down');
-            if (!isWall(ecol - 1, erow)) validMoves.push('left');
-            if (!isWall(ecol + 1, erow)) validMoves.push('right');
-
-            const oppositeDirection = {up:'down', down:'up', left:'right', right:'left'}[enemy.direction];
-            let possibleMoves = validMoves.filter(move => move !== oppositeDirection);
-            if (possibleMoves.length === 0) { possibleMoves = validMoves; } 
-
-            const newDirection = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-            if (newDirection) { enemy.direction = newDirection; }
-        }
-
-        // Set velocity based on direction
-        if (enemy.direction === 'up') { enemy.dy = -enemy.speed; enemy.dx = 0; }
-        else if (enemy.direction === 'down') { enemy.dy = enemy.speed; enemy.dx = 0; }
-        else if (enemy.direction === 'left') { enemy.dx = -enemy.speed; enemy.dy = 0; }
-        else if (enemy.direction === 'right') { enemy.dx = enemy.speed; enemy.dy = 0; }
 
         const nextX = enemy.x + enemy.dx;
         const nextY = enemy.y + enemy.dy;
@@ -128,7 +105,21 @@ function updateEnemies() {
         const br_row = Math.floor((nextY + enemyRadius) / tileSize);
 
         if (isWall(tl_col, tl_row) || isWall(tr_col, tr_row) || isWall(bl_col, bl_row) || isWall(br_col, br_row)) {
-            enemy.dx = 0; enemy.dy = 0;
+            const validMoves = [];
+            const ecol = Math.floor(enemy.x / tileSize);
+            const erow = Math.floor(enemy.y / tileSize);
+            if (!isWall(ecol, erow - 1)) validMoves.push('up');
+            if (!isWall(ecol, erow + 1)) validMoves.push('down');
+            if (!isWall(ecol - 1, erow)) validMoves.push('left');
+            if (!isWall(ecol + 1, erow)) validMoves.push('right');
+            
+            if(validMoves.length > 0) {
+                const newDirection = validMoves[Math.floor(Math.random() * validMoves.length)];
+                if (newDirection === 'up') { enemy.dy = -enemy.speed; enemy.dx = 0; enemy.direction = 'up'; }
+                else if (newDirection === 'down') { enemy.dy = enemy.speed; enemy.dx = 0; enemy.direction = 'down'; }
+                else if (newDirection === 'left') { enemy.dx = -enemy.speed; enemy.dy = 0; enemy.direction = 'left'; }
+                else if (newDirection === 'right') { enemy.dx = enemy.speed; enemy.dy = 0; enemy.direction = 'right'; }
+            }
         } else {
             enemy.x = nextX;
             enemy.y = nextY;
