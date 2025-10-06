@@ -90,6 +90,29 @@ function updatePlayer() { if (!gameStarted) return; const TILE_CENTER=tileSize/2
 function updateEnemies() {
     enemies.forEach(enemy => {
         if (!gameStarted) return;
+        const TILE_CENTER = tileSize / 2;
+        if (enemy.x % tileSize === TILE_CENTER && enemy.y % tileSize === TILE_CENTER) {
+            const ecol = Math.floor(enemy.x / tileSize);
+            const erow = Math.floor(enemy.y / tileSize);
+            const validMoves = [];
+            if (!isWall(ecol, erow - 1)) validMoves.push('up');
+            if (!isWall(ecol, erow + 1)) validMoves.push('down');
+            if (!isWall(ecol - 1, erow)) validMoves.push('left');
+            if (!isWall(ecol + 1, erow)) validMoves.push('right');
+
+            const oppositeDirection = {up:'down', down:'up', left:'right', right:'left'}[enemy.direction];
+            let possibleMoves = validMoves.filter(move => move !== oppositeDirection);
+            if (possibleMoves.length === 0) { possibleMoves = validMoves; } 
+
+            const newDirection = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+            if (newDirection) { enemy.direction = newDirection; }
+        }
+
+        // Set velocity based on direction
+        if (enemy.direction === 'up') { enemy.dy = -enemy.speed; enemy.dx = 0; }
+        else if (enemy.direction === 'down') { enemy.dy = enemy.speed; enemy.dx = 0; }
+        else if (enemy.direction === 'left') { enemy.dx = -enemy.speed; enemy.dy = 0; }
+        else if (enemy.direction === 'right') { enemy.dx = enemy.speed; enemy.dy = 0; }
 
         const nextX = enemy.x + enemy.dx;
         const nextY = enemy.y + enemy.dy;
@@ -105,21 +128,7 @@ function updateEnemies() {
         const br_row = Math.floor((nextY + enemyRadius) / tileSize);
 
         if (isWall(tl_col, tl_row) || isWall(tr_col, tr_row) || isWall(bl_col, bl_row) || isWall(br_col, br_row)) {
-            const validMoves = [];
-            const ecol = Math.floor(enemy.x / tileSize);
-            const erow = Math.floor(enemy.y / tileSize);
-            if (!isWall(ecol, erow - 1)) validMoves.push('up');
-            if (!isWall(ecol, erow + 1)) validMoves.push('down');
-            if (!isWall(ecol - 1, erow)) validMoves.push('left');
-            if (!isWall(ecol + 1, erow)) validMoves.push('right');
-            
-            if(validMoves.length > 0) {
-                const newDirection = validMoves[Math.floor(Math.random() * validMoves.length)];
-                if (newDirection === 'up') { enemy.dy = -enemy.speed; enemy.dx = 0; enemy.direction = 'up'; }
-                else if (newDirection === 'down') { enemy.dy = enemy.speed; enemy.dx = 0; enemy.direction = 'down'; }
-                else if (newDirection === 'left') { enemy.dx = -enemy.speed; enemy.dy = 0; enemy.direction = 'left'; }
-                else if (newDirection === 'right') { enemy.dx = enemy.speed; enemy.dy = 0; enemy.direction = 'right'; }
-            }
+            enemy.dx = 0; enemy.dy = 0;
         } else {
             enemy.x = nextX;
             enemy.y = nextY;
@@ -141,7 +150,7 @@ function reviveEnemy(enemy) {
         if (newDirection === 'up') { enemy.dy = -enemy.speed; enemy.dx = 0; enemy.direction = 'up'; }
         else if (newDirection === 'down') { enemy.dy = enemy.speed; enemy.dx = 0; enemy.direction = 'down'; }
         else if (newDirection === 'left') { enemy.dx = -enemy.speed; enemy.dy = 0; enemy.direction = 'left'; }
-        else if (newDirection === 'right') { enemy.dx = enemy.speed; enemy.dy = 0; enemy.direction = 'right'; }
+        else if (newDirection === 'right') { enemy.dx = enemy.speed; enemy.dx = 0; enemy.direction = 'right'; }
     }
     enemy.isReset = false;
 }
@@ -160,6 +169,8 @@ function checkCollisions() { if (player.isInvulnerable) return; enemies.forEach(
 function updateGameState(deltaTime) { if (powerPillActive) { powerPillTimer -= deltaTime; if (powerPillTimer <= 0) { powerPillActive = false; powerPillTimer = 0; player.speed = player.originalSpeed; } } if (player.isInvulnerable) { player.invulnerabilityTimer -= deltaTime; if (player.invulnerabilityTimer <= 0) { player.isInvulnerable = false; } } }
 
 function drawEndScreen() { ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = 'white'; ctx.font = '40px sans-serif'; ctx.textAlign = 'center'; if (gameState === 'won') { ctx.fillText('¡Ganaste!', canvas.width / 2, canvas.height / 2); } else { ctx.fillText('Has Perdido', canvas.width / 2, canvas.height / 2); } ctx.font = '20px sans-serif'; ctx.fillText('Refresca la página para volver a jugar', canvas.width/2, canvas.height/2 + 40); }
+
+function kickstartEnemies() { enemies.forEach(enemy => { const ecol = Math.floor(enemy.x / tileSize); const erow = Math.floor(enemy.y / tileSize); const validMoves = []; if (!isWall(ecol, erow - 1)) validMoves.push('up'); if (!isWall(ecol, erow + 1)) validMoves.push('down'); if (!isWall(ecol - 1, erow)) validMoves.push('left'); if (!isWall(ecol + 1, erow)) validMoves.push('right'); if(validMoves.length > 0) { const newDirection = validMoves[Math.floor(Math.random() * validMoves.length)]; if (newDirection === 'up') { enemy.dy = -enemy.speed; enemy.dx = 0; enemy.direction = 'up'; } else if (newDirection === 'down') { enemy.dy = enemy.speed; enemy.dx = 0; enemy.direction = 'down'; } else if (newDirection === 'left') { enemy.dx = -enemy.speed; enemy.dy = 0; enemy.direction = 'left'; } else if (newDirection === 'right') { enemy.dx = enemy.speed; enemy.dx = 0; enemy.direction = 'right'; } } }); }
 
 document.addEventListener('keydown', e => { if (gameState === 'playing' && !gameStarted) { gameStarted = true; kickstartEnemies(); } if (e.key === 'ArrowUp') player.nextDirection='up'; else if (e.key === 'ArrowDown') player.nextDirection='down'; else if (e.key === 'ArrowLeft') player.nextDirection='left'; else if (e.key === 'ArrowRight') player.nextDirection='right'; });
 
